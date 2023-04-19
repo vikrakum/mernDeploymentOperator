@@ -1,0 +1,12 @@
+apiVersion: cache.my.domain/v1alpha1
+kind: MernDeployer
+metadata:
+  labels:
+    app.kubernetes.io/name: merndeployer
+    app.kubernetes.io/instance: merndeployer-sample
+    app.kubernetes.io/part-of: merndeployment
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: merndeployment
+  name: merndeployer-sample
+spec:
+  # TODO(user): Add fields here
