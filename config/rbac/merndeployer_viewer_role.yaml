@@ -1,0 +1,27 @@
+# permissions for end users to view merndeployers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: merndeployer-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: merndeploymentoperator
+    app.kubernetes.io/part-of: merndeploymentoperator
+    app.kubernetes.io/managed-by: kustomize
+  name: merndeployer-viewer-role
+rules:
+- apiGroups:
+  - cache.example.com
+  resources:
+  - merndeployers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cache.example.com
+  resources:
+  - merndeployers/status
+  verbs:
+  - get

@@ -1,0 +1,18 @@
+apiVersion: cache.example.com/v1alpha1
+kind: MernDeployer
+metadata:
+  labels:
+    app.kubernetes.io/name: merndeployer
+    app.kubernetes.io/instance: merndeployer-sample
+    app.kubernetes.io/part-of: merndeploymentoperator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: merndeploymentoperator
+  name: merndeployer-sample
+spec:
+  # TODO(user): Add fields here
+  dbSecrets: 
+    username: cm9vdA==
+    password: ZXhhbXBsZQ==
+  serverReplicas: 1
+  dbReplicas: 1
+  namespace: "mern-deployment-operator-ns"
