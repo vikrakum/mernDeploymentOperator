@@ -18,11 +18,13 @@ package controllers
 
 import (
 	"context"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -42,17 +44,36 @@ type MernDeployerReconciler struct {
 func dbDeployer(r *MernDeployerReconciler, ctx context.Context, req ctrl.Request) {
 	log.Log.Info("DB deployment init", "in Namespace", req.Namespace, "Request.Name", req.Name)
 
+	isDepExist := &appsv1.Deployment{}
+	r.Get(ctx, types.NamespacedName{
+		Name:      common.DB_DEPLOYMENT_NAME,
+		Namespace: req.Namespace,
+	}, isDepExist)
+	// if err != nil {
+	// 	return
+	// }
+	if isDepExist.ObjectMeta.Name == common.DB_DEPLOYMENT_NAME && *isDepExist.Spec.Replicas >= 1 {
+		log.Log.Info("deployment: ", common.DB_DEPLOYMENT_NAME, " already exist")
+		return
+	}
+
 	mernDeployer := &v1alpha1.MernDeployer{}
+	dbReplica := new(int32)
+	*dbReplica = 1
+	if mernDeployer.Spec.DbReplicas > 0 {
+		*dbReplica = mernDeployer.Spec.DbReplicas
+	}
+
 	mongodbDeployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      common.DB_APP_NAME,
-			Namespace: mernDeployer.Spec.OperatorNamespace,
+			Name:      common.DB_DEPLOYMENT_NAME,
+			Namespace: req.Namespace,
 			Labels: map[string]string{
 				"app": common.DB_APP_NAME,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &mernDeployer.Spec.DbReplicas,
+			Replicas: dbReplica,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app": common.DB_APP_NAME,
@@ -88,7 +109,8 @@ func dbDeployer(r *MernDeployerReconciler, ctx context.Context, req ctrl.Request
 
 	err := r.Create(ctx, mongodbDeployment)
 	if err != nil {
-		log.Log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", mernDeployer.Spec.OperatorNamespace, "Deployment.Name", mernDeployer.Name)
+		log.Log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", req.Namespace, "Deployment.Name", req.Name)
+		return
 	}
 }
 
@@ -108,12 +130,8 @@ func dbDeployer(r *MernDeployerReconciler, ctx context.Context, req ctrl.Request
 func (r *MernDeployerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// appName := req.Name
-	// appNamespace := req.Namespace
-	// if appName == "" || appNamespace == "" {
-	// 	err := errors.New("Put Name and NameSpace both to continue")
-	// 	return ctrl.Result{}, err
-	// }
+	appName := req.Name
+	appNamespace := req.Namespace
 	// deploymentsAvail := &appsv1.Deployment{}
 	// // check for deployment exits or not
 	// err := r.Get(ctx, types.NamespacedName{
@@ -124,26 +142,49 @@ func (r *MernDeployerReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	// 	return ctrl.Result{}, err
 	// }
 
-	mernDep := &v1alpha1.MernDeployer{}
-
 	// create db deployment
 	dbDeployer(r, ctx, req)
 
 	// db internal services
-	dbInternalService := cf.DbService(mernDep.Spec.OperatorNamespace)
+	// isSVCexist := &corev1.Service{}
+	// err := r.Get(ctx, types.NamespacedName{
+	// 	Name:      common.DB_DEPLOYMENT_NAME + "-service",
+	// 	Namespace: appNamespace,
+	// }, isSVCexist)
+	// if err != nil {
+	// 	log.Log.Error(err, "fial to retrieve SVC")
+	// 	return ctrl.Result{}, err
+	// }
+	// if isSVCexist.ObjectMeta.Name != common.DB_DEPLOYMENT_NAME+"-service" {
+	// }
+
+	dbInternalService := cf.DbService(appName, appNamespace)
+
 	if err := r.Create(ctx, dbInternalService); err != nil {
-		log.Log.Error(err, "Failed to create new Deployment", "Deployment.OperatorNamespace", req.Namespace, "Deployment.Name", req.Name)
+		log.Log.Error(err, "Failed to create new service", "Deployment.OperatorNamespace", appNamespace, "Deployment.Name", appName)
 		return ctrl.Result{}, err
 	}
 
 	// creating server deployment
-	serverDeployment := cf.ServerDeployer(mernDep.Spec.OperatorNamespace)
-	if err := r.Create(ctx, serverDeployment); err != nil {
-		log.Log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", req.Namespace, "Deployment.Name", req.Name)
-		return ctrl.Result{}, err
+	isDepExist := &appsv1.Deployment{}
+	err := r.Get(ctx, types.NamespacedName{
+		Name:      common.SERVER_DEPLOYMENT_NAME,
+		Namespace: req.Namespace,
+	}, isDepExist)
+	if isDepExist.ObjectMeta.Name == common.SERVER_DEPLOYMENT_NAME && *isDepExist.Spec.Replicas >= 1 {
+		log.Log.Info("deployment server: ", common.SERVER_DEPLOYMENT_NAME, " already exist")
+
+	}
+	if err != nil {
+		log.Log.Error(err, "fail to retrieve mongo-express")
+		serverDeployment := cf.ServerDeployer(appName, appNamespace)
+		if err := r.Create(ctx, serverDeployment); err != nil {
+			log.Log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", appNamespace, "Deployment.Name", common.SERVER_DEPLOYMENT_NAME)
+			return ctrl.Result{}, err
+		}
 	}
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: time.Duration(60000 * time.Second)}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

@@ -9,20 +9,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func ServerDeployer(nameSpace string) *appsv1.Deployment {
-	log.Log.Info("DB deployment init", "in Namespace", nameSpace, "Request.Name", nameSpace)
+func ServerDeployer(name string, nameSpace string) *appsv1.Deployment {
+	log.Log.Info("DB deployment init", "in Namespace", nameSpace, "Request.Name", name)
 
 	mernDeployer := &v1alpha1.MernDeployer{}
+	serverReplicaNum := new(int32)
+	*serverReplicaNum = 1
+	if mernDeployer.Spec.ServerReplicas > 0 {
+		*serverReplicaNum = mernDeployer.Spec.ServerReplicas
+	}
+
 	mongoExpressDeployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      common.SERVER_APP_NAME,
+			Name:      common.SERVER_DEPLOYMENT_NAME,
 			Namespace: mernDeployer.Namespace,
 			Labels: map[string]string{
 				"app": common.SERVER_APP_NAME,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &mernDeployer.Spec.ServerReplicas,
+			Replicas: serverReplicaNum,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app": common.SERVER_APP_NAME,

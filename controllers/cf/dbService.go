@@ -7,7 +7,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func DbService(nameSpace string) *corev1.Service {
+func DbService(name string, nameSpace string) *corev1.Service {
+
 	dbService := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      common.DB_DEPLOYMENT_NAME + "-service",

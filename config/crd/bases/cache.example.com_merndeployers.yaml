@@ -50,14 +50,11 @@ spec:
                   properties:
                     name:
                       type: string
+                    nameSpace:
+                      type: string
                   type: object
                 type: array
               end:
-                type: integer
-              operatorNamespace:
-                type: string
-              replicas:
-                format: int32
                 type: integer
               serverReplicas:
                 format: int32

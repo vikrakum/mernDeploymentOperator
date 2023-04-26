@@ -34,18 +34,17 @@ type MernDeployerSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of MernDeployer. Edit merndeployer_types.go to remove/update
-	Start             int              `json:"start,omitempty"`
-	End               int              `json:"end,omitempty"`
-	Replicas          int32            `json:"replicas,omitempty"`
-	Deployments       []DeploymentType `json:"deployments,omitempty"`
-	DbSecrets         DbSecretsType    `json:"dbSecrets,omitempty"`
-	DbReplicas        int32            `json:"dbReplicas,omitempty"`
-	ServerReplicas    int32            `json:"serverReplicas,omitempty"`
-	OperatorNamespace string           `json:"operatorNamespace,omitempty"`
+	Start          int              `json:"start,omitempty"`
+	End            int              `json:"end,omitempty"`
+	Deployments    []DeploymentType `json:"deployments,omitempty"`
+	DbSecrets      DbSecretsType    `json:"dbSecrets,omitempty"`
+	DbReplicas     int32            `json:"dbReplicas,omitempty"`
+	ServerReplicas int32            `json:"serverReplicas,omitempty"`
 }
 
 type DeploymentType struct {
-	Name string `json:"name,omitempty"`
+	Name      string `json:"name,omitempty"`
+	NameSpace string `json:"nameSpace,omitempty"`
 }
 
 type DbSecretsType struct {

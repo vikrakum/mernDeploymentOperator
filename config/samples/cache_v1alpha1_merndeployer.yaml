@@ -15,4 +15,3 @@ spec:
     password: ZXhhbXBsZQ==
   serverReplicas: 1
   dbReplicas: 1
-  namespace: "mern-deployment-operator-ns"
